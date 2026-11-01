@@ -1,0 +1,4 @@
+interface:
+  display_name: "browser-bookmark-homepage"
+  short_description: "Build a Chromium bookmark nav homepage HTML"
+  default_prompt: "使用 $browser-bookmark-homepage 完成它所解决的任务，并按可观察标准检查结果。"
