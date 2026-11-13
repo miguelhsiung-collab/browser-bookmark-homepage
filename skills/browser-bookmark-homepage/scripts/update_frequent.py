@@ -465,35 +465,82 @@ def install_windows_task(args) -> int:
             [
                 "@echo off",
                 "chcp 65001 >nul",
-                f'set "NAV_UPDATER_LOG={log_path}"',
-                f'"{exe}" "{script}" --config "{config}" --watch --serve --interval {args.interval} --port {args.port}',
+                'set "NAV_UPDATER_LOG=' + str(log_path) + '"',
+                '"{0}" "{1}" --config "{2}" --watch --serve --interval {3} --port {4}'.format(
+                    exe, script, config, args.interval, args.port
+                ),
             ]
         )
         + "\n",
         encoding="utf-8",
     )
     task_name = "BookmarkHomepageFrequentUpdate"
-    cmd = [
-        "schtasks",
-        "/Create",
-        "/TN",
-        task_name,
-        "/TR",
-        str(wrapper),
-        "/SC",
-        "ONLOGON",
-        "/RL",
-        "LIMITED",
-        "/F",
-    ]
+    xml_path = config.with_name("updater-task.xml")
+    desc = "Auto-refresh bookmark homepage frequent sites and serve 127.0.0.1"
+    xml = "\n".join([
+        '<?xml version="1.0" encoding="UTF-16"?>',
+        '<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">',
+        "  <RegistrationInfo>",
+        "    <Description>" + desc + "</Description>",
+        "  </RegistrationInfo>",
+        "  <Triggers>",
+        "    <LogonTrigger>",
+        "      <Enabled>true</Enabled>",
+        "    </LogonTrigger>",
+        "  </Triggers>",
+        "  <Principals>",
+        "    <Principal id=\"Author\">",
+        "      <LogonType>InteractiveToken</LogonType>",
+        "      <RunLevel>LeastPrivilege</RunLevel>",
+        "    </Principal>",
+        "  </Principals>",
+        "  <Settings>",
+        "    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>",
+        "    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>",
+        "    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>",
+        "    <AllowHardTerminate>true</AllowHardTerminate>",
+        "    <StartWhenAvailable>true</StartWhenAvailable>",
+        "    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>",
+        "    <IdleSettings>",
+        "      <StopOnIdleEnd>false</StopOnIdleEnd>",
+        "      <RestartOnIdle>false</RestartOnIdle>",
+        "    </IdleSettings>",
+        "    <AllowStartOnDemand>true</AllowStartOnDemand>",
+        "    <Enabled>true</Enabled>",
+        "    <Hidden>false</Hidden>",
+        "    <RunOnlyIfIdle>false</RunOnlyIfIdle>",
+        "    <WakeToRun>false</WakeToRun>",
+        "    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>",
+        "    <Priority>7</Priority>",
+        "  </Settings>",
+        "  <Actions Context=\"Author\">",
+        "    <Exec>",
+        "      <Command>" + str(wrapper) + "</Command>",
+        "      <WorkingDirectory>" + str(wrapper.parent) + "</WorkingDirectory>",
+        "    </Exec>",
+        "  </Actions>",
+        "</Task>",
+        "",
+    ])
+    xml_path.write_text(xml, encoding="utf-16")
+    cmd = ["schtasks", "/Create", "/TN", task_name, "/XML", str(xml_path), "/F"]
     log("creating scheduled task: " + " ".join(cmd))
-    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
-    sys.stdout.write(result.stdout or "")
-    sys.stderr.write(result.stderr or "")
+    result = subprocess.run(cmd, capture_output=True)
+    def _safe(data: bytes) -> str:
+        if not data:
+            return ""
+        for enc in ("utf-16", "utf-8", "gbk", "cp936"):
+            try:
+                return data.decode(enc)
+            except UnicodeDecodeError:
+                continue
+        return data.decode("utf-8", errors="replace")
+    sys.stdout.write(_safe(result.stdout))
+    sys.stderr.write(_safe(result.stderr))
     if result.returncode != 0:
-        log(f"schtasks failed with code {result.returncode}")
+        log("schtasks failed with code " + str(result.returncode))
         return result.returncode
-    log(f"scheduled task installed: {task_name} (ONLOGON) -> {wrapper}")
+    log("scheduled task installed: " + task_name + " (ONLOGON) -> " + str(wrapper))
     env = {**os.environ, "NAV_UPDATER_LOG": str(log_path)}
     subprocess.Popen(
         [str(exe), str(script), "--config", str(config), "--watch", "--serve", "--interval", str(args.interval), "--port", str(args.port)],
