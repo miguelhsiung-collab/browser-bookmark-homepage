@@ -1,0 +1,15 @@
+{
+  "homepage": [
+    "D:\\OneDrive\\WORK\\我的导航.html"
+  ],
+  "browser": "comet",
+  "profile": "Default",
+  "top": 20,
+  "candidates": 80,
+  "interval": 15,
+  "port": 8765,
+  "frequent_label": "高频访问",
+  "bookmarks": "",
+  "history": "",
+  "hidden": ""
+}

@@ -7,10 +7,14 @@ import json
 import re
 import shutil
 import sqlite3
+import sys
 import tempfile
 from collections import defaultdict
 from pathlib import Path
 from urllib.parse import urlparse
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from hidden_store import load_hidden, hidden_host_set, hidden_url_set, normalize_host, normalize_url
 
 AUTH_PATH = re.compile(
     r"(login|signin|sign-in|signup|sign-up|oauth|authorize|/auth/|sso|saml|logout|password|accounts/login|session|loginDeepControl|join-team)",
@@ -150,7 +154,13 @@ def prefer_url(host: str, candidates: list[str], bookmark_urls: dict[str, str]) 
     return pool[0] if pool else f"https://{host}/"
 
 
-def load_frequent(history_path: Path, top: int, bookmark_by_host: dict[str, str]) -> list[dict]:
+def load_frequent(
+    history_path: Path,
+    top: int,
+    bookmark_by_host: dict[str, str],
+    hidden_hosts: set[str] | None = None,
+    hidden_urls: set[str] | None = None,
+) -> list[dict]:
     tmp = Path(tempfile.mkdtemp()) / "History"
     shutil.copy2(history_path, tmp)
     conn = sqlite3.connect(str(tmp))
@@ -181,6 +191,8 @@ def load_frequent(history_path: Path, top: int, bookmark_by_host: dict[str, str]
             host_titles[h] = title.strip()
 
     ranked = sorted(host_counts.items(), key=lambda x: (-x[1], x[0]))
+    skip_hosts = {normalize_host(h) for h in (hidden_hosts or set()) if h}
+    skip_urls = {normalize_url(u) for u in (hidden_urls or set()) if u}
     out = []
     for h, count in ranked:
         # Skip hosts that only have auth URLs and no bookmark
@@ -190,7 +202,9 @@ def load_frequent(history_path: Path, top: int, bookmark_by_host: dict[str, str]
         url = prefer_url(h, urls, bookmark_by_host)
         if is_auth_url(url) and h not in bookmark_by_host:
             continue
-        name = bookmark_by_host.get(h) and None
+        # Homepage-only denylist: skip so the next host can fill Top N
+        if normalize_host(h) in skip_hosts or normalize_url(url) in skip_urls:
+            continue
         # name from bookmark title if we stored only url — fix below
         display = host_titles.get(h) or h
         out.append({"name": display, "url": url, "host": h, "visit_count": count})
@@ -229,6 +243,8 @@ def main() -> int:
     ap.add_argument("--history", default="")
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--top", type=int, default=20)
+    ap.add_argument("--candidates", type=int, default=80, help="Candidate pool size written to frequent_candidates.json")
+    ap.add_argument("--hidden", default="", help="Optional hidden.json denylist (homepage-only)")
     args = ap.parse_args()
 
     out_dir = Path(args.out_dir)
@@ -239,16 +255,25 @@ def main() -> int:
     home_map = bookmark_home_map(cats)
     name_map = bookmark_name_map(cats)
 
+    hidden_store = load_hidden(args.hidden) if args.hidden else None
+    skip_hosts = hidden_host_set(hidden_store) if hidden_store else set()
+    skip_urls = hidden_url_set(hidden_store) if hidden_store else set()
+
     frequent: list[dict] = []
+    candidates: list[dict] = []
     if args.history:
         hp = Path(args.history)
         if hp.is_file():
-            frequent = load_frequent(hp, args.top, home_map)
-            for item in frequent:
-                if item["host"] in name_map:
-                    item["name"] = name_map[item["host"]]
-                elif item["name"] and len(item["name"]) > 40:
-                    item["name"] = item["host"]
+            cand_n = max(args.candidates, args.top)
+            # Candidates ignore the denylist so the page can refill Top N after local hides.
+            candidates = load_frequent(hp, cand_n, home_map)
+            frequent = load_frequent(hp, args.top, home_map, skip_hosts, skip_urls)
+            for lst in (candidates, frequent):
+                for item in lst:
+                    if item["host"] in name_map:
+                        item["name"] = name_map[item["host"]]
+                    elif item["name"] and len(item["name"]) > 40:
+                        item["name"] = item["host"]
         else:
             warnings.append(f"History not found: {hp}")
     else:
@@ -256,10 +281,12 @@ def main() -> int:
 
     (out_dir / "bookmarks.json").write_text(json.dumps(cats, ensure_ascii=False, indent=2), encoding="utf-8")
     (out_dir / "frequent.json").write_text(json.dumps(frequent, ensure_ascii=False, indent=2), encoding="utf-8")
+    (out_dir / "frequent_candidates.json").write_text(json.dumps(candidates, ensure_ascii=False, indent=2), encoding="utf-8")
     meta = {
         "bookmark_categories": len(cats),
         "bookmark_items": sum(len(v) for v in cats.values()),
         "frequent_count": len(frequent),
+        "candidate_count": len(candidates),
         "top": args.top,
         "warnings": warnings,
     }

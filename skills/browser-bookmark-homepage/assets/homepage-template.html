@@ -18,6 +18,7 @@
   --radius: 12px;
   --aside-w: 180px;
   --hot: #f59e0b;
+  --danger: #ef4444;
 }
 html.io-dark {
   --theme: #60a5fa;
@@ -67,12 +68,13 @@ aside {
 }
 .aside-nav a.hot { color: #d97706; }
 html.io-dark .aside-nav a.hot { color: #fbbf24; }
-.aside-foot { padding: 8px; border-top: 1px solid var(--border); }
-.aside-foot button {
-  width: 100%; border: 0; background: transparent; color: var(--muted);
+.aside-foot { padding: 8px 0 0; border-top: 1px solid var(--border); display:flex; flex-direction:column; gap:2px; }
+.aside-foot button, .mobile-bar button, .panel-actions button, .toast button, .drawer-close {
+  border: 0; background: transparent; color: var(--muted);
   padding: 10px; border-radius: 10px; cursor: pointer; font-size: 13px;
 }
-.aside-foot button:hover { background: var(--theme-soft); color: var(--theme); }
+.aside-foot button:hover, .mobile-bar button:hover { background: var(--theme-soft); color: var(--theme); }
+.aside-foot button.active { background: var(--theme-soft); color: var(--theme); font-weight: 600; }
 main { flex: 1; min-width: 0; }
 .banner {
   background-image: linear-gradient(45deg, #6699cc 0%, #479ac7 50%, #d5f3f4 100%);
@@ -125,44 +127,109 @@ html.io-dark .section.hot-section .section-head { color: #fbbf24; }
   display: flex; align-items: center; gap: 12px;
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 12px 14px;
-  box-shadow: var(--shadow); transition: .15s transform, .15s box-shadow;
+  box-shadow: var(--shadow); transition: .15s transform, .15s box-shadow, .15s border-color;
+  min-height: 72px;
 }
-.card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(15,23,42,.1); }
+.card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(15,23,42,.1); border-color: color-mix(in srgb, var(--theme) 40%, var(--border)); }
 .card.hot-card { border-color: rgba(245,158,11,.35); }
-.icon { width: 36px; height: 36px; border-radius: 10px; flex: 0 0 36px; }
+.icon { width: 36px; height: 36px; border-radius: 10px; flex: 0 0 36px; object-fit: cover; }
 .letter {
   width: 36px; height: 36px; border-radius: 10px; flex: 0 0 36px;
   display: grid; place-items: center; color: #fff; font-weight: 700;
 }
-.meta { min-width: 0; }
-.title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meta { min-width: 0; flex: 1; }
+.title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 28px; }
 .desc { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .badge {
   position: absolute; top: 6px; right: 8px;
   font-size: 10px; color: #b45309; background: rgba(245,158,11,.15);
   padding: 2px 6px; border-radius: 999px;
 }
+html.io-dark .badge { background: #78350f; color: #fde68a; }
+.card-del {
+  position: absolute; top: 6px; right: 6px;
+  width: 22px; height: 22px; border: 0; border-radius: 999px;
+  background: rgba(15,23,42,.72); color: #fff;
+  font-size: 14px; line-height: 22px; padding: 0;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  z-index: 2;
+}
+.card-del:hover { background: var(--danger); }
+.card:hover .card-del, body.editing .card-del { opacity: 1; pointer-events: auto; }
+.card:hover .badge, body.editing .badge { right: 30px; }
 .empty { color: var(--muted); padding: 40px; text-align: center; }
 .mobile-bar { display: none; }
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  background: rgba(15,23,42,.92); color: #fff;
+  padding: 10px 14px; border-radius: 999px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; z-index: 60; box-shadow: var(--shadow);
+  max-width: calc(100% - 32px);
+}
+.toast button { color: #93c5fd; font-weight: 700; padding: 4px 8px; }
+.drawer-mask {
+  position: fixed; inset: 0; background: rgba(15,23,42,.45);
+  z-index: 40; display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.drawer-mask.open { display: flex; }
+.drawer {
+  background: var(--card); color: var(--text);
+  width: min(520px, 100%); max-height: min(80vh, 640px);
+  border-radius: 16px; border: 1px solid var(--border);
+  box-shadow: 0 20px 50px rgba(15,23,42,.25);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.drawer header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px 8px; font-weight: 700;
+}
+.drawer .hint { margin: 0 18px 8px; color: var(--muted); font-size: 12px; }
+.drawer-list { overflow: auto; padding: 8px 12px 16px; flex: 1; }
+.hidden-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 10px;
+}
+.hidden-item:hover { background: var(--theme-soft); }
+.hidden-item .meta { flex: 1; min-width: 0; }
+.hidden-item button {
+  border: 0; background: var(--theme-soft); color: var(--theme);
+  border-radius: 999px; padding: 6px 10px; cursor: pointer; font-size: 12px; font-weight: 600;
+}
+.panel-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px 16px; border-top: 1px solid var(--border); }
+.panel-actions button {
+  background: var(--theme-soft); color: var(--theme); font-weight: 600;
+}
+.updated-dot { font-weight: 500; font-size: 12px; opacity: .85; }
 @media (max-width: 800px) {
   aside { display: none; }
   .mobile-bar {
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
     padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--aside);
   }
+  .mobile-bar .actions { display: flex; gap: 4px; }
 }
 </style>
 </head>
 <body>
 <div class="mobile-bar">
   <strong>__TITLE__</strong>
-  <button type="button" id="themeBtnMobile">主题</button>
+  <div class="actions">
+    <button type="button" id="editBtnMobile">编辑</button>
+    <button type="button" id="hiddenBtnMobile">已删除</button>
+    <button type="button" id="themeBtnMobile">主题</button>
+  </div>
 </div>
 <div class="layout">
   <aside>
     <div class="brand"><div class="brand-mark">导</div><span>__TITLE__</span></div>
     <nav class="aside-nav" id="asideNav"></nav>
-    <div class="aside-foot"><button type="button" id="themeBtn">切换深色模式</button></div>
+    <div class="aside-foot">
+      <button type="button" id="editBtn">编辑主页</button>
+      <button type="button" id="hiddenBtn">已删除</button>
+      <button type="button" id="refreshBtn">检查更新</button>
+      <button type="button" id="themeBtn">切换深色模式</button>
+    </div>
   </aside>
   <main>
     <div class="banner">
@@ -185,123 +252,524 @@ html.io-dark .section.hot-section .section-head { color: #fbbf24; }
     <div class="content" id="content"></div>
   </main>
 </div>
+<div class="drawer-mask" id="hiddenMask" hidden>
+  <div class="drawer" role="dialog" aria-modal="true" aria-labelledby="hiddenTitle">
+    <header>
+      <span id="hiddenTitle">已从主页移除</span>
+      <button type="button" class="drawer-close" id="closeHidden" aria-label="关闭">关闭</button>
+    </header>
+    <p class="hint">只隐藏本页卡片，不会删除浏览器里的书签或历史记录。被移除的高频站点在下次自动更新时也不会再出现。</p>
+    <div class="drawer-list" id="hiddenList"></div>
+    <div class="panel-actions">
+      <button type="button" id="exportHidden">导出 hidden.json</button>
+      <button type="button" id="restoreAll">全部恢复</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<!--NAV_FREQUENT_START-->
+<script id="frequent-snapshot">
+window.__FREQUENT_SNAPSHOT__ = __FREQUENT_SNAPSHOT_JSON__;
+</script>
+<!--NAV_FREQUENT_END-->
+<!--NAV_HIDDEN_START-->
+<script id="hidden-seed">
+window.__HIDDEN_SEED__ = __HIDDEN_SEED_JSON__;
+</script>
+<!--NAV_HIDDEN_END-->
 <script>
 const DATA = __DATA_JSON__;
 const ICONS = __ICONS_JSON__;
 const VISITS = __VISITS_JSON__;
 const FREQUENT_LABEL = "__FREQUENT_LABEL__";
+const FREQUENT_TIP = "__FREQUENT_TIP__";
+const DISPLAY_TOP = __DISPLAY_TOP__;
+const API_PORT = __API_PORT__;
+const STORAGE_KEY = "nav-hidden-v1";
+const THEME_KEY = "nav-theme";
+const REFRESH_MS = 15 * 60 * 1000;
 
 function favicon(url) {
   try {
     const u = new URL(url);
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
-    return 'https://www.google.com/s2/favicons?sz=64&domain_url=' + encodeURIComponent(u.origin);
-  } catch(e) { return ''; }
+    if (u.protocol !== "http:" && u.protocol !== "https:") return "";
+    return "https://www.google.com/s2/favicons?sz=64&domain_url=" + encodeURIComponent(u.origin);
+  } catch (e) { return ""; }
 }
 function letterAvatar(name) {
-  const ch = (name || '?').trim().charAt(0).toUpperCase() || '?';
+  const ch = (name || "?").trim().charAt(0).toUpperCase() || "?";
   const colors = ["#1abc9c","#2ecc71","#3498db","#9b59b6","#16a085","#27ae60","#2980b9","#8e44ad","#f1c40f","#e67e22","#e74c3c","#00bcd4","#f39c12","#d35400","#c0392b"];
   const color = colors[ch.charCodeAt(0) % colors.length];
   return {ch, color};
 }
 function hostOf(url) {
-  try { return new URL(url).host.replace(/^www\./,'') || url; } catch(e) { return url; }
+  try { return new URL(url).host.replace(/^www\./, "") || url; } catch (e) { return url; }
 }
-let engine = 'filter';
-const content = document.getElementById('content');
-const asideNav = document.getElementById('asideNav');
-const q = document.getElementById('q');
+function normalizeHost(host) {
+  return String(host || "").trim().toLowerCase().replace(/^www\./, "");
+}
+function normalizeUrl(url) {
+  try {
+    const p = new URL(url);
+    let host = (p.hostname || "").toLowerCase().replace(/^www\./, "");
+    if (p.port) host += ":" + p.port;
+    let path = p.pathname || "/";
+    if (path !== "/" && path.endsWith("/")) path = path.slice(0, -1);
+    return p.protocol + "//" + host + path + (p.search || "");
+  } catch (e) {
+    return String(url || "").replace(/\/$/, "");
+  }
+}
+function itemKey(it) {
+  const scope = it.scope || "url";
+  if (scope === "host") return "host::" + normalizeHost(it.host || hostOf(it.url || ""));
+  return "url::" + normalizeUrl(it.url || "");
+}
+function normalizeStore(data) {
+  const rawItems = !data ? [] : (Array.isArray(data) ? data : (data.items || []));
+  const seen = {};
+  rawItems.forEach((raw) => {
+    if (!raw) return;
+    const url = (raw.url || "").trim();
+    const host = normalizeHost(raw.host || hostOf(url));
+    const scope = raw.scope === "host" || (!raw.scope && (raw.cat === FREQUENT_LABEL || raw.cat === "Frequent")) ? "host" : "url";
+    if (scope === "host" && !host) return;
+    if (scope !== "host" && !url) return;
+    const it = {
+      url,
+      host,
+      name: (raw.name || host || url || "").trim(),
+      cat: raw.cat || "",
+      scope,
+      hidden: raw.hidden !== false,
+      updatedAt: Number(raw.updatedAt || 0)
+    };
+    const k = itemKey(it);
+    if (!seen[k] || it.updatedAt >= seen[k].updatedAt) seen[k] = it;
+  });
+  return { version: 1, items: Object.values(seen) };
+}
+function mergeStores(a, b) {
+  return normalizeStore({ items: (normalizeStore(a).items).concat(normalizeStore(b).items) });
+}
+function loadLocalStore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? normalizeStore(JSON.parse(raw)) : { version: 1, items: [] };
+  } catch (e) {
+    return { version: 1, items: [] };
+  }
+}
+function activeHidden(store) {
+  return (store.items || []).filter(it => it.hidden !== false);
+}
+let hiddenStore = mergeStores(window.__HIDDEN_SEED__ || { items: [] }, loadLocalStore());
+
+function persistLocal() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(hiddenStore)); } catch (e) {}
+}
+function apiBases() {
+  const bases = [];
+  const seen = new Set();
+  const add = (b) => { if (b && !seen.has(b)) { seen.add(b); bases.push(b); } };
+  try {
+    if (location.protocol.startsWith("http") && (location.hostname === "127.0.0.1" || location.hostname === "localhost")) {
+      add(location.origin);
+    }
+  } catch (e) {}
+  const ports = [];
+  if (API_PORT) ports.push(Number(API_PORT));
+  [8765, 8766, 8767, 8768, 8769, 8770].forEach(p => ports.push(p));
+  ports.forEach(p => add("http://127.0.0.1:" + p));
+  return bases;
+}
+async function apiGet(path) {
+  for (const base of apiBases()) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 1200);
+      const res = await fetch(base + path, { cache: "no-store", signal: ctrl.signal });
+      clearTimeout(t);
+      if (res.ok) return await res.json();
+    } catch (e) {}
+  }
+  return null;
+}
+async function apiPost(path, body) {
+  for (const base of apiBases()) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 1500);
+      const res = await fetch(base + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: ctrl.signal
+      });
+      clearTimeout(t);
+      if (res.ok) return await res.json();
+    } catch (e) {}
+  }
+  return null;
+}
+async function syncHiddenToServer() {
+  const remote = await apiPost("/api/hidden", hiddenStore);
+  if (remote) hiddenStore = mergeStores(hiddenStore, remote);
+}
+
+function hiddenUrlSet() {
+  const s = new Set();
+  activeHidden(hiddenStore).forEach(it => { if (it.url) s.add(normalizeUrl(it.url)); });
+  return s;
+}
+function hiddenHostSet() {
+  const s = new Set();
+  activeHidden(hiddenStore).forEach(it => { if (it.scope === "host" && it.host) s.add(normalizeHost(it.host)); });
+  return s;
+}
+function isHiddenItem(it, cat) {
+  const url = normalizeUrl(it.url || "");
+  const host = normalizeHost(it.host || hostOf(it.url || ""));
+  if (url && hiddenUrlSet().has(url)) return true;
+  if ((cat === FREQUENT_LABEL || cat === "Frequent") && host && hiddenHostSet().has(host)) return true;
+  return false;
+}
+
+let engine = "filter";
+let snapVersion = (window.__FREQUENT_SNAPSHOT__ && window.__FREQUENT_SNAPSHOT__.version) || 0;
+const content = document.getElementById("content");
+const asideNav = document.getElementById("asideNav");
+const q = document.getElementById("q");
+const toastEl = document.getElementById("toast");
+const hiddenMask = document.getElementById("hiddenMask");
+let toastTimer = 0;
+let lastSnapshot = window.__FREQUENT_SNAPSHOT__ || null;
+let undoSnapshot = null;
+
 function allItems() {
   const list = [];
-  Object.keys(DATA).forEach(cat => DATA[cat].forEach(it => list.push({...it, cat})));
+  Object.keys(DATA).forEach(cat => (DATA[cat] || []).forEach(it => list.push({...it, cat})));
   return list;
 }
 function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 }
-function render(filterText='') {
-  const ft = filterText.trim().toLowerCase();
-  asideNav.innerHTML = '';
-  content.innerHTML = '';
+function visibleForCat(cat, filterText) {
+  const ft = (filterText || "").trim().toLowerCase();
+  let items = (DATA[cat] || []).filter(it => !isHiddenItem(it, cat));
+  if (cat === FREQUENT_LABEL || cat === "Frequent") items = items.slice(0, DISPLAY_TOP);
+  if (ft) {
+    items = items.filter(it =>
+      (it.name || "").toLowerCase().includes(ft) ||
+      (it.url || "").toLowerCase().includes(ft) ||
+      (it.host || "").toLowerCase().includes(ft)
+    );
+  }
+  return items;
+}
+function render(filterText) {
+  if (filterText === undefined) filterText = q.value;
+  const ft = (filterText || "").trim();
+  asideNav.innerHTML = "";
+  content.innerHTML = "";
   let shown = 0;
   const cats = Object.keys(DATA);
   cats.forEach(cat => {
-    let items = DATA[cat];
-    if (ft) {
-      items = items.filter(it =>
-        (it.name||'').toLowerCase().includes(ft) ||
-        (it.url||'').toLowerCase().includes(ft) ||
-        (it.host||'').toLowerCase().includes(ft)
-      );
-    }
+    const items = visibleForCat(cat, ft);
     if (!items.length) return;
     shown += items.length;
-    const id = 'cat-' + encodeURIComponent(cat);
-    const a = document.createElement('a');
-    a.href = '#' + id;
-    if (cat === FREQUENT_LABEL) a.classList.add('hot');
-    a.innerHTML = `<span>${ICONS[cat]||'•'}</span><span>${cat} <small style="opacity:.7">(${items.length})</small></span>`;
+    const id = "cat-" + encodeURIComponent(cat);
+    const a = document.createElement("a");
+    a.href = "#" + id;
+    if (cat === FREQUENT_LABEL) a.classList.add("hot");
+    a.innerHTML = `<span>${ICONS[cat]||"•"}</span><span>${escapeHtml(cat)} <small style="opacity:.7">(${items.length})</small></span>`;
     asideNav.appendChild(a);
-    const section = document.createElement('section');
-    section.className = 'section' + (cat === FREQUENT_LABEL ? ' hot-section' : '');
+    const section = document.createElement("section");
+    section.className = "section" + (cat === FREQUENT_LABEL ? " hot-section" : "");
     section.id = id;
-    const tip = cat === FREQUENT_LABEL ? ' · 按浏览器访问次数自动收录' : '';
-    section.innerHTML = `<div class="section-head"><span>${ICONS[cat]||''}</span><span>${cat}</span><span style="font-weight:500;font-size:12px">· ${items.length}${tip}</span></div>`;
-    const grid = document.createElement('div');
-    grid.className = 'grid';
+    const tip = cat === FREQUENT_LABEL ? " · " + FREQUENT_TIP : "";
+    section.innerHTML = `<div class="section-head"><span>${ICONS[cat]||""}</span><span>${escapeHtml(cat)}</span><span style="font-weight:500;font-size:12px">· ${items.length}${escapeHtml(tip)}</span></div>`;
+    const grid = document.createElement("div");
+    grid.className = "grid";
     items.forEach((it, idx) => {
-      const card = document.createElement('a');
-      card.className = 'card' + (cat === FREQUENT_LABEL ? ' hot-card' : '');
+      const card = document.createElement("a");
+      card.className = "card" + (cat === FREQUENT_LABEL ? " hot-card" : "");
       card.href = it.url;
-      card.target = '_blank';
-      card.rel = 'noopener noreferrer';
-      card.title = it.name + '\n' + it.url;
+      card.target = "_blank";
+      card.rel = "noopener noreferrer";
+      card.title = it.name + "\n" + it.url;
+      card.dataset.url = it.url || "";
+      card.dataset.host = it.host || hostOf(it.url || "");
+      card.dataset.name = it.name || "";
+      card.dataset.cat = cat;
       const fav = favicon(it.url);
       const la = letterAvatar(it.name);
       const iconHtml = fav
-        ? `<img class="icon" src="${fav}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'" /><div class="letter" style="display:none;background:${la.color}">${la.ch}</div>`
-        : `<div class="letter" style="background:${la.color}">${la.ch}</div>`;
-      let badge = '';
+        ? `<img class="icon" src="${fav}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'" /><div class="letter" style="display:none;background:${la.color}">${escapeHtml(la.ch)}</div>`
+        : `<div class="letter" style="background:${la.color}">${escapeHtml(la.ch)}</div>`;
+      let badge = "";
       if (cat === FREQUENT_LABEL) {
-        const vc = VISITS[it.host] || VISITS[(it.host||'').replace(/^www\./,'')] || '';
-        badge = `<span class="badge">#${idx+1}${vc ? ' · ' + vc + '次' : ''}</span>`;
+        const vc = VISITS[it.host] || VISITS[normalizeHost(it.host)] || "";
+        badge = `<span class="badge">#${idx+1}${vc ? " · " + vc + "次" : ""}</span>`;
       }
-      card.innerHTML = `${badge}${iconHtml}<div class="meta"><div class="title">${escapeHtml(it.name)}</div><div class="desc">${escapeHtml(it.host || hostOf(it.url))}</div></div>`;
+      card.innerHTML = `${badge}${iconHtml}<div class="meta"><div class="title">${escapeHtml(it.name)}</div><div class="desc">${escapeHtml(it.host || hostOf(it.url))}</div></div><button type="button" class="card-del" aria-label="从主页移除">×</button>`;
       grid.appendChild(card);
     });
     section.appendChild(grid);
     content.appendChild(section);
   });
   if (!shown) content.innerHTML = '<div class="empty">没有匹配的书签，换个关键词试试。</div>';
-  const bookmarkCount = allItems().filter(i => i.cat !== FREQUENT_LABEL).length;
-  const freqCount = (DATA[FREQUENT_LABEL] || []).length;
-  document.getElementById('statsLine').textContent =
-    `书签 ${bookmarkCount} · 高频站点 ${freqCount} · ${cats.length} 个分类` + (ft ? ` · 当前显示 ${shown} 个` : '');
+  const bookmarkCount = cats.reduce((n, cat) => {
+    if (cat === FREQUENT_LABEL || cat === "Frequent") return n;
+    return n + visibleForCat(cat, "").length;
+  }, 0);
+  const freqCount = visibleForCat(FREQUENT_LABEL, "").length;
+  const visibleCats = cats.filter(cat => visibleForCat(cat, "").length).length;
+  let extra = "";
+  if (lastSnapshot && lastSnapshot.generatedAt) {
+    const t = String(lastSnapshot.generatedAt).replace("T", " ").slice(11, 16);
+    if (t) extra = " · 高频更新于 " + t;
+  }
+  document.getElementById("statsLine").innerHTML =
+    `书签 ${bookmarkCount} · 高频站点 ${freqCount} · ${visibleCats} 个分类` +
+    (ft ? ` · 当前显示 ${shown} 个` : "") +
+    `<span class="updated-dot">${extra}</span>`;
+  const nHidden = activeHidden(hiddenStore).length;
+  const hiddenLabel = nHidden ? `已删除 (${nHidden})` : "已删除";
+  document.getElementById("hiddenBtn").textContent = hiddenLabel;
+  document.getElementById("hiddenBtnMobile").textContent = hiddenLabel;
+  document.getElementById("editBtn").textContent = document.body.classList.contains("editing") ? "完成编辑" : "编辑主页";
+  document.getElementById("editBtnMobile").textContent = document.body.classList.contains("editing") ? "完成" : "编辑";
+  document.getElementById("editBtn").classList.toggle("active", document.body.classList.contains("editing"));
 }
+
+function showToast(message, undoStore) {
+  toastEl.hidden = false;
+  toastEl.innerHTML = `<span>${escapeHtml(message)}</span>`;
+  if (undoStore) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "撤销";
+    btn.addEventListener("click", () => {
+      hiddenStore = undoStore;
+      persistLocal();
+      syncHiddenToServer();
+      render();
+      renderHiddenPanel();
+      toastEl.hidden = true;
+    });
+    toastEl.appendChild(btn);
+  }
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toastEl.hidden = true; }, 8000);
+}
+
+function hideCard(it, cat) {
+  const prev = JSON.parse(JSON.stringify(hiddenStore));
+  const record = {
+    url: it.url || "",
+    host: normalizeHost(it.host || hostOf(it.url || "")),
+    name: it.name || "",
+    cat,
+    scope: (cat === FREQUENT_LABEL || cat === "Frequent") ? "host" : "url",
+    hidden: true,
+    updatedAt: Date.now()
+  };
+  hiddenStore = mergeStores(hiddenStore, { items: [record] });
+  persistLocal();
+  syncHiddenToServer();
+  render();
+  showToast("已从主页移除「" + (it.name || it.host || "该站点") + "」", prev);
+}
+
+function restoreKey(key) {
+  const prev = JSON.parse(JSON.stringify(hiddenStore));
+  const items = (hiddenStore.items || []).map(it => {
+    if (itemKey(it) === key) return Object.assign({}, it, { hidden: false, updatedAt: Date.now() });
+    return it;
+  });
+  hiddenStore = normalizeStore({ items });
+  persistLocal();
+  syncHiddenToServer();
+  render();
+  renderHiddenPanel();
+  showToast("已恢复到主页", prev);
+}
+
+function restoreAll() {
+  const prev = JSON.parse(JSON.stringify(hiddenStore));
+  const items = (hiddenStore.items || []).map(it => Object.assign({}, it, { hidden: false, updatedAt: Date.now() }));
+  hiddenStore = normalizeStore({ items });
+  persistLocal();
+  syncHiddenToServer();
+  render();
+  renderHiddenPanel();
+  showToast("已恢复全部站点", prev);
+}
+
+function renderHiddenPanel() {
+  const list = document.getElementById("hiddenList");
+  const items = activeHidden(hiddenStore);
+  if (!items.length) {
+    list.innerHTML = '<div class="empty">当前没有从主页移除的站点。</div>';
+    return;
+  }
+  list.innerHTML = "";
+  items.forEach(it => {
+    const row = document.createElement("div");
+    row.className = "hidden-item";
+    const scopeTip = it.scope === "host" ? "高频站点" : (it.cat || "书签");
+    row.innerHTML = `<div class="meta"><div class="title">${escapeHtml(it.name || it.host || it.url)}</div><div class="desc">${escapeHtml(scopeTip + " · " + (it.host || it.url || ""))}</div></div>`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "恢复";
+    btn.addEventListener("click", () => restoreKey(itemKey(it)));
+    row.appendChild(btn);
+    list.appendChild(row);
+  });
+}
+
+function openHiddenPanel() {
+  hiddenMask.hidden = false;
+  hiddenMask.classList.add("open");
+  renderHiddenPanel();
+}
+function closeHiddenPanel() {
+  hiddenMask.classList.remove("open");
+  hiddenMask.hidden = true;
+}
+function uiBusy() {
+  return document.body.classList.contains("editing") || hiddenMask.classList.contains("open");
+}
+function toggleEditing() {
+  document.body.classList.toggle("editing");
+  render();
+}
+
+function applyFrequentSnapshot(snap) {
+  if (!snap || !Array.isArray(snap.items)) return false;
+  if (snap.version && snap.version === snapVersion && DATA[FREQUENT_LABEL]) {
+    // Still refresh visits/items in case of first load.
+  }
+  const label = snap.frequentLabel || FREQUENT_LABEL;
+  DATA[label] = snap.items.map(it => ({ name: it.name, url: it.url, host: it.host }));
+  Object.keys(VISITS).forEach(k => { delete VISITS[k]; });
+  const visits = snap.visits || {};
+  Object.keys(visits).forEach(k => { VISITS[k] = visits[k]; });
+  snap.items.forEach(it => {
+    if (it.host && it.visit_count && VISITS[it.host] == null) VISITS[it.host] = it.visit_count;
+  });
+  snapVersion = snap.version || snapVersion;
+  lastSnapshot = snap;
+  window.__FREQUENT_SNAPSHOT__ = snap;
+  return true;
+}
+
+function loadSidecarScript() {
+  return new Promise((resolve) => {
+    try {
+      if (location.protocol !== "file:") { resolve(null); return; }
+      const s = document.createElement("script");
+      const base = location.href.replace(/[#?].*$/, "").replace(/[^\/]+$/, "frequent-data.js");
+      s.src = base + "?t=" + Date.now();
+      s.onload = () => resolve(window.__FREQUENT_SNAPSHOT__ || null);
+      s.onerror = () => resolve(null);
+      document.head.appendChild(s);
+      setTimeout(() => resolve(window.__FREQUENT_SNAPSHOT__ || null), 1500);
+    } catch (e) { resolve(null); }
+  });
+}
+
+async function pullFrequent(manual) {
+  if (!manual && uiBusy()) return false;
+  let snap = await apiGet("/api/frequent");
+  if (!snap || !Array.isArray(snap.items)) {
+    snap = await loadSidecarScript();
+  }
+  if (!snap || !Array.isArray(snap.items)) {
+    if (manual) showToast("暂时没有读到新的高频数据。若使用 file:// 打开，可启动本地更新服务后再试。");
+    return false;
+  }
+  const ver = snap.version || 0;
+  const changed = ver !== snapVersion || JSON.stringify(snap.items) !== JSON.stringify((lastSnapshot && lastSnapshot.items) || []);
+  if (!changed && !manual) return false;
+  applyFrequentSnapshot(snap);
+  render();
+  if (manual) showToast(changed ? "高频访问已更新" : "高频访问已是最新");
+  else if (changed) showToast("高频访问已自动更新");
+  return changed;
+}
+
+function startAutoRefresh() {
+  setInterval(() => { if (document.visibilityState === "visible") pullFrequent(false); }, REFRESH_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") pullFrequent(false);
+  });
+  window.addEventListener("focus", () => pullFrequent(false));
+}
+
+function exportHidden() {
+  const blob = new Blob([JSON.stringify(hiddenStore, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "hidden.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
 function doSearch() {
   const text = q.value.trim();
-  if (engine === 'filter' || !text) { render(text); return; }
-  window.open(engine.replace('%s%', encodeURIComponent(text)), '_blank');
+  if (engine === "filter" || !text) { render(text); return; }
+  window.open(engine.replace("%s%", encodeURIComponent(text)), "_blank");
 }
-document.getElementById('engines').addEventListener('click', (e) => {
-  const btn = e.target.closest('button');
-  if (!btn) return;
-  document.querySelectorAll('#engines button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  engine = btn.dataset.engine;
-  if (engine === 'filter') render(q.value);
-});
-q.addEventListener('input', () => { if (engine === 'filter') render(q.value); });
-q.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
-document.getElementById('go').addEventListener('click', doSearch);
 function toggleTheme() {
-  document.documentElement.classList.toggle('io-dark');
-  localStorage.setItem('nav-theme', document.documentElement.classList.contains('io-dark') ? 'dark' : 'light');
+  document.documentElement.classList.toggle("io-dark");
+  localStorage.setItem(THEME_KEY, document.documentElement.classList.contains("io-dark") ? "dark" : "light");
 }
-document.getElementById('themeBtn').addEventListener('click', toggleTheme);
-document.getElementById('themeBtnMobile').addEventListener('click', toggleTheme);
-if (localStorage.getItem('nav-theme') === 'dark') document.documentElement.classList.add('io-dark');
+
+content.addEventListener("click", (e) => {
+  const btn = e.target.closest(".card-del");
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const card = btn.closest(".card");
+  if (!card) return;
+  hideCard({ url: card.dataset.url, host: card.dataset.host, name: card.dataset.name }, card.dataset.cat);
+});
+document.getElementById("engines").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  document.querySelectorAll("#engines button").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  engine = btn.dataset.engine;
+  if (engine === "filter") render(q.value);
+});
+q.addEventListener("input", () => { if (engine === "filter") render(q.value); });
+q.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
+document.getElementById("go").addEventListener("click", doSearch);
+document.getElementById("themeBtn").addEventListener("click", toggleTheme);
+document.getElementById("themeBtnMobile").addEventListener("click", toggleTheme);
+document.getElementById("editBtn").addEventListener("click", toggleEditing);
+document.getElementById("editBtnMobile").addEventListener("click", toggleEditing);
+document.getElementById("hiddenBtn").addEventListener("click", openHiddenPanel);
+document.getElementById("hiddenBtnMobile").addEventListener("click", openHiddenPanel);
+document.getElementById("closeHidden").addEventListener("click", closeHiddenPanel);
+hiddenMask.addEventListener("click", (e) => { if (e.target === hiddenMask) closeHiddenPanel(); });
+document.getElementById("exportHidden").addEventListener("click", exportHidden);
+document.getElementById("restoreAll").addEventListener("click", restoreAll);
+document.getElementById("refreshBtn").addEventListener("click", () => pullFrequent(true));
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeHiddenPanel(); });
+if (localStorage.getItem(THEME_KEY) === "dark") document.documentElement.classList.add("io-dark");
+if (window.__FREQUENT_SNAPSHOT__) applyFrequentSnapshot(window.__FREQUENT_SNAPSHOT__);
+persistLocal();
 render();
+startAutoRefresh();
+apiGet("/api/hidden").then((remote) => {
+  if (!remote) return;
+  hiddenStore = mergeStores(hiddenStore, remote);
+  persistLocal();
+  render();
+});
 </script>
 </body>
 </html>
