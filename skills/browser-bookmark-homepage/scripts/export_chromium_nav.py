@@ -126,9 +126,13 @@ def load_bookmarks(path: Path) -> dict[str, list]:
     for key in ("bookmark_bar", "other", "synced"):
         if key in roots:
             walk_bookmarks(roots[key], None, flat)
-    # Prefer real folders when most items have distinct folders
+    # Prefer real folders when they actually organize most items.
+    # If the tree is flat, or a large share sits in 其他常用, use keyword heuristics.
     folders = {i["folder"] for i in flat if i.get("folder")}
-    use_heuristic = len(folders) <= 1
+    catch_names = {"其他常用", "Other"}
+    catch_n = sum(1 for i in flat if (i.get("folder") or "其他常用") in catch_names)
+    use_heuristic = len(folders) <= 1 or (flat and catch_n / len(flat) >= 0.4)
+    only_classify_catch = use_heuristic and len(folders) > 1
     cats: dict[str, list] = defaultdict(list)
     seen = set()
     for it in flat:
@@ -136,7 +140,14 @@ def load_bookmarks(path: Path) -> dict[str, list]:
         if key in seen:
             continue
         seen.add(key)
-        cat = heuristic_cat(it) if use_heuristic else (it.get("folder") or "其他常用")
+        folder = it.get("folder") or "其他常用"
+        if use_heuristic:
+            if only_classify_catch and folder not in catch_names:
+                cat = folder
+            else:
+                cat = heuristic_cat(it)
+        else:
+            cat = folder
         cats[cat].append({"name": it["name"], "url": it["url"], "host": it["host"]})
     return dict(cats)
 
