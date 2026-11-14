@@ -49,13 +49,25 @@ aside {
   display: flex; flex-direction: column; z-index: 20;
 }
 .brand {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 10px 16px; font-weight: 700; font-size: 15px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 8px 16px; font-weight: 700; font-size: 14px;
+  min-width: 0;
 }
 .brand-mark {
-  width: 32px; height: 32px; border-radius: 10px;
+  width: 32px; height: 32px; border-radius: 10px; flex: 0 0 32px;
   background: linear-gradient(135deg,#6699cc,#479ac7 50%,#7dd3d8);
   color: #fff; display:grid; place-items:center; font-size: 14px;
+}
+.brand-text {
+  min-width: 0;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 .aside-nav { flex: 1; overflow: auto; padding-bottom: 12px; }
 .aside-nav a {
@@ -124,26 +136,39 @@ html.io-dark .section.hot-section .section-head { color: #fbbf24; }
 }
 .card {
   position: relative;
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: flex-start; gap: 12px;
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 12px 14px;
   box-shadow: var(--shadow); transition: .15s transform, .15s box-shadow, .15s border-color;
-  min-height: 72px;
+  min-height: 76px;
 }
 .card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(15,23,42,.1); border-color: color-mix(in srgb, var(--theme) 40%, var(--border)); }
 .card.hot-card { border-color: rgba(245,158,11,.35); }
-.icon { width: 36px; height: 36px; border-radius: 10px; flex: 0 0 36px; object-fit: cover; }
+.icon { width: 36px; height: 36px; border-radius: 10px; flex: 0 0 36px; object-fit: cover; margin-top: 1px; }
 .letter {
   width: 36px; height: 36px; border-radius: 10px; flex: 0 0 36px;
   display: grid; place-items: center; color: #fff; font-weight: 700;
+  margin-top: 1px;
 }
 .meta { min-width: 0; flex: 1; }
-.title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 28px; }
-.desc { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meta-top { display: flex; align-items: flex-start; gap: 8px; }
+.title {
+  flex: 1; min-width: 0;
+  font-size: 13px; font-weight: 600; line-height: 1.35;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.desc { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 .badge {
-  position: absolute; top: 6px; right: 8px;
+  flex: 0 0 auto;
   font-size: 10px; color: #b45309; background: rgba(245,158,11,.15);
-  padding: 2px 6px; border-radius: 999px;
+  padding: 2px 6px; border-radius: 999px; white-space: nowrap;
+  line-height: 1.3; margin-top: 1px;
 }
 html.io-dark .badge { background: #78350f; color: #fde68a; }
 .card-del {
@@ -156,7 +181,7 @@ html.io-dark .badge { background: #78350f; color: #fde68a; }
 }
 .card-del:hover { background: var(--danger); }
 .card:hover .card-del, body.editing .card-del { opacity: 1; pointer-events: auto; }
-.card:hover .badge, body.editing .badge { right: 30px; }
+.card:hover, body.editing .card { padding-right: 32px; }
 .empty { color: var(--muted); padding: 40px; text-align: center; }
 .mobile-bar { display: none; }
 .toast {
@@ -213,7 +238,7 @@ html.io-dark .badge { background: #78350f; color: #fde68a; }
 </head>
 <body>
 <div class="mobile-bar">
-  <strong>__TITLE__</strong>
+  <strong>__BRAND__</strong>
   <div class="actions">
     <button type="button" id="editBtnMobile">编辑</button>
     <button type="button" id="hiddenBtnMobile">已删除</button>
@@ -222,7 +247,7 @@ html.io-dark .badge { background: #78350f; color: #fde68a; }
 </div>
 <div class="layout">
   <aside>
-    <div class="brand"><div class="brand-mark">导</div><span>__TITLE__</span></div>
+    <div class="brand"><div class="brand-mark">导</div><span class="brand-text">__BRAND__</span></div>
     <nav class="aside-nav" id="asideNav"></nav>
     <div class="aside-foot">
       <button type="button" id="editBtn">编辑主页</button>
@@ -308,6 +333,61 @@ function hostOf(url) {
 function normalizeHost(host) {
   return String(host || "").trim().toLowerCase().replace(/^www\./, "");
 }
+
+const SHORT_HOST_NAMES = {
+  "x.com":"X","twitter.com":"X","baidu.com":"百度","google.com":"Google","github.com":"GitHub",
+  "gitlab.com":"GitLab","youtube.com":"YouTube","bilibili.com":"哔哩哔哩","iqiyi.com":"爱奇艺",
+  "youku.com":"优酷","v.qq.com":"腾讯视频","douban.com":"豆瓣","movie.douban.com":"豆瓣电影",
+  "zhihu.com":"知乎","weixin.qq.com":"微信","mp.weixin.qq.com":"微信公众号",
+  "work.weixin.qq.com":"企业微信","mail.qq.com":"QQ邮箱","exmail.qq.com":"企业邮箱",
+  "es.mail.qq.com":"企业邮箱","cursor.com":"Cursor","grok.com":"Grok","x.ai":"Grok",
+  "openai.com":"OpenAI","chatgpt.com":"ChatGPT","claude.ai":"Claude","taobao.com":"淘宝",
+  "tmall.com":"天猫","jd.com":"京东","amazon.com":"Amazon","amazon.cn":"Amazon"
+};
+function lookupShortHostName(host) {
+  const h = normalizeHost(host);
+  if (SHORT_HOST_NAMES[h]) return SHORT_HOST_NAMES[h];
+  const keys = Object.keys(SHORT_HOST_NAMES).filter(k => h.endsWith("." + k)).sort((a,b) => b.length - a.length);
+  return keys.length ? SHORT_HOST_NAMES[keys[0]] : "";
+}
+function cleanPageTitle(title) {
+  let t = String(title || "").replace(/\s+/g, " ").trim();
+  t = t.replace(/^\(\d+\)\s*/, "").replace(/^【.*?】\s*/, "");
+  if (!t) return "";
+  const parts = t.split(/\s*[-–—|｜·•]\s*/).map(s => s.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const first = parts[0];
+    const restLen = parts.slice(1).join(" ").length;
+    if (parts.length === 2 && t.length <= 16 && parts[1].length <= 12) return t;
+    if (first.length >= 2 && first.length <= 16 && (restLen >= 6 || t.length > 16)) return first;
+  }
+  if (t.includes("-") && !/\s-\s/.test(t)) {
+    const first = t.split("-", 2)[0].trim();
+    if (first.length >= 2 && first.length <= 16) return first;
+  }
+  return t;
+}
+function isGoodShortName(name) {
+  const n = String(name || "").trim();
+  if (!n || n.length > 16) return false;
+  if (/^https?:\/\//i.test(n)) return false;
+  if (/^\(\d+\)\s*/.test(n)) return false;
+  return true;
+}
+function displayName(it, cat) {
+  const host = normalizeHost(it.host || hostOf(it.url || ""));
+  const known = lookupShortHostName(host);
+  const frequent = (cat === FREQUENT_LABEL || cat === "Frequent");
+  if (frequent && known) return known;
+  const bm = String(it.name || "").trim();
+  const bmClean = bm ? cleanPageTitle(bm) : "";
+  if (isGoodShortName(bmClean)) return bmClean;
+  if (isGoodShortName(bm)) return bm;
+  if (known) return known;
+  if (bmClean) return bmClean;
+  return host || bm || "未命名";
+}
+
 function normalizeUrl(url) {
   try {
     const p = new URL(url);
@@ -497,13 +577,15 @@ function render(filterText) {
       card.href = it.url;
       card.target = "_blank";
       card.rel = "noopener noreferrer";
-      card.title = it.name + "\n" + it.url;
       card.dataset.url = it.url || "";
       card.dataset.host = it.host || hostOf(it.url || "");
       card.dataset.name = it.name || "";
       card.dataset.cat = cat;
+      const name = displayName(it, cat);
+      card.title = name + "\n" + it.url;
+      card.dataset.name = name;
       const fav = favicon(it.url);
-      const la = letterAvatar(it.name);
+      const la = letterAvatar(name);
       const iconHtml = fav
         ? `<img class="icon" src="${fav}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'" /><div class="letter" style="display:none;background:${la.color}">${escapeHtml(la.ch)}</div>`
         : `<div class="letter" style="background:${la.color}">${escapeHtml(la.ch)}</div>`;
@@ -512,7 +594,7 @@ function render(filterText) {
         const vc = VISITS[it.host] || VISITS[normalizeHost(it.host)] || "";
         badge = `<span class="badge">#${idx+1}${vc ? " · " + vc + "次" : ""}</span>`;
       }
-      card.innerHTML = `${badge}${iconHtml}<div class="meta"><div class="title">${escapeHtml(it.name)}</div><div class="desc">${escapeHtml(it.host || hostOf(it.url))}</div></div><button type="button" class="card-del" aria-label="从主页移除">×</button>`;
+      card.innerHTML = `${iconHtml}<div class="meta"><div class="meta-top"><div class="title">${escapeHtml(name)}</div>${badge}</div><div class="desc">${escapeHtml(it.host || hostOf(it.url))}</div></div><button type="button" class="card-del" aria-label="从主页移除">×</button>`;
       grid.appendChild(card);
     });
     section.appendChild(grid);
@@ -687,7 +769,7 @@ async function pullFrequent(manual) {
     snap = await loadSidecarScript();
   }
   if (!snap || !Array.isArray(snap.items)) {
-    if (manual) showToast("暂时没有读到新的高频数据。若使用 file:// 打开，可启动本地更新服务后再试。");
+    if (manual) setRefreshLabel("未读到更新");
     return false;
   }
   const ver = snap.version || 0;
@@ -695,9 +777,18 @@ async function pullFrequent(manual) {
   if (!changed && !manual) return false;
   applyFrequentSnapshot(snap);
   render();
-  if (manual) showToast(changed ? "高频访问已更新" : "高频访问已是最新");
-  else if (changed) showToast("高频访问已自动更新");
+  if (manual) setRefreshLabel(changed ? "已更新" : "已是最新");
   return changed;
+}
+
+function setRefreshLabel(text) {
+  const btn = document.getElementById("refreshBtn");
+  if (!btn) return;
+  btn.textContent = text;
+  clearTimeout(setRefreshLabel._t);
+  if (text !== "检查更新") {
+    setRefreshLabel._t = setTimeout(() => { btn.textContent = "检查更新"; }, 2500);
+  }
 }
 
 function startAutoRefresh() {

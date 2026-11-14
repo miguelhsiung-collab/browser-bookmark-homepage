@@ -49,6 +49,113 @@ def host_key(url: str) -> str:
         return ""
 
 
+
+# Short official names for well-known hosts (frequent section aggregates by host).
+SHORT_HOST_NAMES = {
+    "x.com": "X",
+    "twitter.com": "X",
+    "baidu.com": "百度",
+    "google.com": "Google",
+    "github.com": "GitHub",
+    "gitlab.com": "GitLab",
+    "youtube.com": "YouTube",
+    "bilibili.com": "哔哩哔哩",
+    "iqiyi.com": "爱奇艺",
+    "youku.com": "优酷",
+    "v.qq.com": "腾讯视频",
+    "douban.com": "豆瓣",
+    "movie.douban.com": "豆瓣电影",
+    "zhihu.com": "知乎",
+    "weixin.qq.com": "微信",
+    "mp.weixin.qq.com": "微信公众号",
+    "work.weixin.qq.com": "企业微信",
+    "mail.qq.com": "QQ邮箱",
+    "exmail.qq.com": "企业邮箱",
+    "es.mail.qq.com": "企业邮箱",
+    "cursor.com": "Cursor",
+    "grok.com": "Grok",
+    "x.ai": "Grok",
+    "openai.com": "OpenAI",
+    "chatgpt.com": "ChatGPT",
+    "claude.ai": "Claude",
+    "taobao.com": "淘宝",
+    "tmall.com": "天猫",
+    "jd.com": "京东",
+    "amazon.com": "Amazon",
+    "amazon.cn": "Amazon",
+}
+
+
+def lookup_short_host_name(host: str) -> str:
+    h = (host or "").strip().lower()
+    if h.startswith("www."):
+        h = h[4:]
+    if h in SHORT_HOST_NAMES:
+        return SHORT_HOST_NAMES[h]
+    matches = [k for k in SHORT_HOST_NAMES if h.endswith("." + k)]
+    if not matches:
+        return ""
+    matches.sort(key=len, reverse=True)
+    return SHORT_HOST_NAMES[matches[0]]
+
+
+def clean_page_title(title: str) -> str:
+    t = re.sub(r"\s+", " ", (title or "").strip())
+    t = re.sub(r"^\(\d+\)\s*", "", t)
+    t = re.sub(r"^【.*?】\s*", "", t)
+    if not t:
+        return ""
+    parts = [p.strip() for p in re.split(r"\s*[-–—|｜·•]\s*", t) if p.strip()]
+    if len(parts) >= 2:
+        first = parts[0]
+        rest_len = len(" ".join(parts[1:]))
+        # Keep short two-part brands like "Chaos · YouMind".
+        if len(parts) == 2 and len(t) <= 16 and len(parts[1]) <= 12:
+            return t
+        if 2 <= len(first) <= 16 and (rest_len >= 6 or len(t) > 16):
+            return first
+    if "-" in t and not re.search(r"\s-\s", t):
+        first = t.split("-", 1)[0].strip()
+        if 2 <= len(first) <= 16:
+            return first
+    return t
+
+
+def is_good_short_name(name: str) -> bool:
+    n = (name or "").strip()
+    if not n or len(n) > 16:
+        return False
+    if re.match(r"^https?://", n, re.I):
+        return False
+    if re.match(r"^\(\d+\)\s*", n):
+        return False
+    return True
+
+
+def pick_display_name(host: str, bookmark_name: str = "", page_title: str = "", *, frequent: bool = True) -> str:
+    """Prefer a short site/bookmark name over a raw browser tab title."""
+    known = lookup_short_host_name(host)
+    if frequent and known:
+        return known
+    bm = (bookmark_name or "").strip()
+    bm_clean = clean_page_title(bm) if bm else ""
+    if is_good_short_name(bm_clean):
+        return bm_clean
+    if is_good_short_name(bm):
+        return bm
+    if known:
+        return known
+    cleaned = clean_page_title(page_title)
+    if cleaned:
+        return cleaned
+    if bm_clean:
+        return bm_clean
+    h = (host or "").strip().lower()
+    if h.startswith("www."):
+        h = h[4:]
+    return h or host or page_title or "未命名"
+
+
 def is_http(url: str) -> bool:
     try:
         return urlparse(url).scheme in ("http", "https")
@@ -243,8 +350,12 @@ def bookmark_name_map(cats: dict) -> dict[str, str]:
     for items in cats.values():
         for it in items:
             h = it.get("host") or ""
-            if h and h not in names and it.get("name"):
-                names[h] = it["name"]
+            n = (it.get("name") or "").strip()
+            if not h or not n:
+                continue
+            prev = names.get(h)
+            if prev is None or len(n) < len(prev):
+                names[h] = n
     return names
 
 
@@ -281,10 +392,12 @@ def main() -> int:
             frequent = load_frequent(hp, args.top, home_map, skip_hosts, skip_urls)
             for lst in (candidates, frequent):
                 for item in lst:
-                    if item["host"] in name_map:
-                        item["name"] = name_map[item["host"]]
-                    elif item["name"] and len(item["name"]) > 40:
-                        item["name"] = item["host"]
+                    item["name"] = pick_display_name(
+                        item["host"],
+                        name_map.get(item["host"]) or "",
+                        item.get("name") or "",
+                        frequent=True,
+                    )
         else:
             warnings.append(f"History not found: {hp}")
     else:

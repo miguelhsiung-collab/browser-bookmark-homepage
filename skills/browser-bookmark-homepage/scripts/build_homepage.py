@@ -31,6 +31,16 @@ DEFAULT_ICONS = {
 TZ_SHANGHAI = timezone(timedelta(hours=8), name="Asia/Shanghai")
 
 
+def short_brand(title: str) -> str:
+    t = (title or "").strip()
+    for sep in (" · ", " — ", " - ", "｜", "|"):
+        if sep in t:
+            left = t.split(sep, 1)[0].strip()
+            if left:
+                return left
+    return t or "我的导航"
+
+
 def now_iso() -> str:
     return datetime.now(TZ_SHANGHAI).isoformat(timespec="seconds")
 
@@ -86,6 +96,7 @@ def main() -> int:
     ap.add_argument("--frequent-tip", default="按浏览器访问次数自动收录")
     ap.add_argument("--top", type=int, default=20)
     ap.add_argument("--api-port", type=int, default=8765)
+    ap.add_argument("--brand", default="", help="Short sidebar label; default is the title before ·")
     args = ap.parse_args()
 
     cats = json.loads(Path(args.bookmarks).read_text(encoding="utf-8"))
@@ -116,6 +127,7 @@ def main() -> int:
 
     html = Path(args.template).read_text(encoding="utf-8")
     html = html.replace("__TITLE__", args.title)
+    html = html.replace("__BRAND__", args.brand or short_brand(args.title))
     html = html.replace("__STATS_LINE__", stats)
     html = html.replace("__DATA_JSON__", json.dumps(data, ensure_ascii=False))
     html = html.replace("__VISITS_JSON__", json.dumps(visits, ensure_ascii=False))

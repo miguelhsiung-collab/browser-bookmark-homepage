@@ -22,7 +22,7 @@ from hidden_store import (  # noqa: E402
     merge_stores,
     save_hidden,
 )
-from export_chromium_nav import load_frequent  # noqa: E402
+from export_chromium_nav import load_frequent, pick_display_name  # noqa: E402
 from build_homepage import main as build_main  # noqa: E402
 import build_homepage  # noqa: E402
 import update_frequent  # noqa: E402
@@ -60,6 +60,15 @@ def write_history(path: Path, rows: list[tuple[str, str, int]]) -> None:
     conn.executemany("INSERT INTO urls(url, title, visit_count) VALUES (?,?,?)", rows)
     conn.commit()
     conn.close()
+
+
+def test_display_names() -> None:
+    assert pick_display_name("x.com", "", "(1) X上的 huangserv...", frequent=True) == "X"
+    assert pick_display_name("baidu.com", "", "百度一下，你就知道", frequent=True) == "百度"
+    assert pick_display_name("iqiyi.com", "", "爱奇艺-在线视频网站-海量", frequent=True) == "爱奇艺"
+    assert pick_display_name("github.com", "", "GitHub - TanShilong/foo", frequent=True) == "GitHub"
+    assert pick_display_name("youmind.com", "", "Chaos · YouMind", frequent=True) == "Chaos · YouMind"
+    assert pick_display_name("zhihu.com", "如何学习Python", "", frequent=False) == "如何学习Python"
 
 
 def test_denylist_and_build(tmp: Path) -> None:
@@ -136,6 +145,10 @@ def test_denylist_and_build(tmp: Path) -> None:
     html = html_out.read_text(encoding="utf-8")
     assert "NAV_FREQUENT_START" in html
     assert "从主页移除" in html
+    assert "高频访问已自动更新" not in html
+    assert "__BRAND__" not in html
+    assert "brand-text" in html
+    assert "setRefreshLabel" in html
     assert "已从主页移除" in html
     assert (tmp / "frequent-data.js").is_file()
     # hidden seed contains the denylist
@@ -228,6 +241,7 @@ def test_local_server(tmp: Path) -> None:
 def main() -> int:
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
+        test_display_names()
         test_denylist_and_build(tmp)
         test_local_server(tmp)
     print("selftest ok")

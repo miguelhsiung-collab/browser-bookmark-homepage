@@ -27,6 +27,7 @@ from export_chromium_nav import (  # noqa: E402
     bookmark_name_map,
     load_bookmarks,
     load_frequent,
+    pick_display_name,
 )
 from build_homepage import snapshot_payload, write_frequent_sidecar  # noqa: E402
 
@@ -215,10 +216,12 @@ def patch_homepage(homepage: Path, payload: dict, hidden: dict) -> bool:
 
 def apply_names(items: list[dict], name_map: dict[str, str]) -> list[dict]:
     for item in items:
-        if item["host"] in name_map:
-            item["name"] = name_map[item["host"]]
-        elif item.get("name") and len(item["name"]) > 40:
-            item["name"] = item["host"]
+        item["name"] = pick_display_name(
+            item.get("host") or "",
+            name_map.get(item.get("host") or "") or "",
+            item.get("name") or "",
+            frequent=True,
+        )
     return items
 
 

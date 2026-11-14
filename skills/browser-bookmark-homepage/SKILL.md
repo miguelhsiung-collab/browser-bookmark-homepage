@@ -1,8 +1,13 @@
 ---
 name: browser-bookmark-homepage
-description: When the user wants a personal start/nav homepage built from Chromium or Comet bookmarks, or an auto Top-N frequent-sites section from browser History visit counts. Also when they want to hide/remove site cards on that homepage, restore hidden cards, or auto-refresh the frequent section from History. Not for Firefox-only workflows, writing browser extensions, or deploying self-hosted OneNav.
+description: >-
+  When the user wants a personal start/nav homepage built from Chromium or Comet
+  bookmarks, or an auto Top-N frequent-sites section from browser History visit
+  counts. Also when they want to hide/remove site cards on that homepage,
+  restore hidden cards, or auto-refresh the frequent section from History. Not
+  for Firefox-only workflows, writing browser extensions, or deploying
+  self-hosted OneNav.
 ---
-
 # Browser bookmark homepage
 
 Build a self-contained HTML navigation homepage from Chromium-family browser data (Chrome, Edge, Brave, Perplexity Comet, and similar). Default visual style follows littleheli / OneNav (aside categories, gradient search banner, favicon cards). The user may name another public reference site; if that site needs a logged-in app or heavy server UI, fall back to the default card grid.
