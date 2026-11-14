@@ -67,7 +67,8 @@ def test_display_names() -> None:
     assert pick_display_name("baidu.com", "", "百度一下，你就知道", frequent=True) == "百度"
     assert pick_display_name("iqiyi.com", "", "爱奇艺-在线视频网站-海量", frequent=True) == "爱奇艺"
     assert pick_display_name("github.com", "", "GitHub - TanShilong/foo", frequent=True) == "GitHub"
-    assert pick_display_name("youmind.com", "", "Chaos · YouMind", frequent=True) == "Chaos · YouMind"
+    assert pick_display_name("youmind.com", "", "Chaos · YouMind", frequent=True) == "YouMind"
+    assert pick_display_name("pan.baidu.com", "", "English说文解字", frequent=True) == "百度网盘"
     assert pick_display_name("zhihu.com", "如何学习Python", "", frequent=False) == "如何学习Python"
 
 

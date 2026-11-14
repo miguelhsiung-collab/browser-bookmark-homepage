@@ -55,6 +55,9 @@ SHORT_HOST_NAMES = {
     "x.com": "X",
     "twitter.com": "X",
     "baidu.com": "百度",
+    "pan.baidu.com": "百度网盘",
+    "yun.baidu.com": "百度网盘",
+    "youmind.com": "YouMind",
     "google.com": "Google",
     "github.com": "GitHub",
     "gitlab.com": "GitLab",
@@ -90,13 +93,8 @@ def lookup_short_host_name(host: str) -> str:
     h = (host or "").strip().lower()
     if h.startswith("www."):
         h = h[4:]
-    if h in SHORT_HOST_NAMES:
-        return SHORT_HOST_NAMES[h]
-    matches = [k for k in SHORT_HOST_NAMES if h.endswith("." + k)]
-    if not matches:
-        return ""
-    matches.sort(key=len, reverse=True)
-    return SHORT_HOST_NAMES[matches[0]]
+    # Exact host only: pan.baidu.com must not inherit "百度".
+    return SHORT_HOST_NAMES.get(h, "")
 
 
 def clean_page_title(title: str) -> str:
@@ -109,10 +107,12 @@ def clean_page_title(title: str) -> str:
     if len(parts) >= 2:
         first = parts[0]
         rest_len = len(" ".join(parts[1:]))
-        # Keep short two-part brands like "Chaos · YouMind".
-        if len(parts) == 2 and len(t) <= 16 and len(parts[1]) <= 12:
+        # Keep short two-part brands only when joined by a mid-dot (Chaos · YouMind).
+        # Hyphen / dash is usually "品牌 - 口号", so take the first short part.
+        mid_dot = ("·" in t or "•" in t) and "-" not in t and "—" not in t and "–" not in t
+        if mid_dot and len(parts) == 2 and len(t) <= 16 and len(parts[1]) <= 12:
             return t
-        if 2 <= len(first) <= 16 and (rest_len >= 6 or len(t) > 16):
+        if 2 <= len(first) <= 16 and (rest_len >= 4 or len(t) > 12):
             return first
     if "-" in t and not re.search(r"\s-\s", t):
         first = t.split("-", 1)[0].strip()

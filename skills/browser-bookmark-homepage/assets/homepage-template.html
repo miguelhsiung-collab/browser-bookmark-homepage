@@ -335,7 +335,8 @@ function normalizeHost(host) {
 }
 
 const SHORT_HOST_NAMES = {
-  "x.com":"X","twitter.com":"X","baidu.com":"百度","google.com":"Google","github.com":"GitHub",
+  "x.com":"X","twitter.com":"X","baidu.com":"百度","pan.baidu.com":"百度网盘","yun.baidu.com":"百度网盘",
+  "youmind.com":"YouMind","google.com":"Google","github.com":"GitHub",
   "gitlab.com":"GitLab","youtube.com":"YouTube","bilibili.com":"哔哩哔哩","iqiyi.com":"爱奇艺",
   "youku.com":"优酷","v.qq.com":"腾讯视频","douban.com":"豆瓣","movie.douban.com":"豆瓣电影",
   "zhihu.com":"知乎","weixin.qq.com":"微信","mp.weixin.qq.com":"微信公众号",
@@ -346,9 +347,7 @@ const SHORT_HOST_NAMES = {
 };
 function lookupShortHostName(host) {
   const h = normalizeHost(host);
-  if (SHORT_HOST_NAMES[h]) return SHORT_HOST_NAMES[h];
-  const keys = Object.keys(SHORT_HOST_NAMES).filter(k => h.endsWith("." + k)).sort((a,b) => b.length - a.length);
-  return keys.length ? SHORT_HOST_NAMES[keys[0]] : "";
+  return SHORT_HOST_NAMES[h] || "";
 }
 function cleanPageTitle(title) {
   let t = String(title || "").replace(/\s+/g, " ").trim();
@@ -358,8 +357,9 @@ function cleanPageTitle(title) {
   if (parts.length >= 2) {
     const first = parts[0];
     const restLen = parts.slice(1).join(" ").length;
-    if (parts.length === 2 && t.length <= 16 && parts[1].length <= 12) return t;
-    if (first.length >= 2 && first.length <= 16 && (restLen >= 6 || t.length > 16)) return first;
+    const midDot = (t.includes("·") || t.includes("•")) && !t.includes("-") && !t.includes("—") && !t.includes("–");
+    if (midDot && parts.length === 2 && t.length <= 16 && parts[1].length <= 12) return t;
+    if (first.length >= 2 && first.length <= 16 && (restLen >= 4 || t.length > 12)) return first;
   }
   if (t.includes("-") && !/\s-\s/.test(t)) {
     const first = t.split("-", 2)[0].trim();
