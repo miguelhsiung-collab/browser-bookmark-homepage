@@ -150,6 +150,10 @@ def test_denylist_and_build(tmp: Path) -> None:
     assert "__BRAND__" not in html
     assert "brand-text" in html
     assert "setRefreshLabel" in html
+    assert ".toast.show { display: flex; }" in html
+    assert "padding: 16px 24px 18px" in html
+    # Author display:flex must not apply to a hidden/empty toast.
+    assert "display: none" in html.split(".toast {", 1)[1].split("}", 1)[0]
     assert "已从主页移除" in html
     assert (tmp / "frequent-data.js").is_file()
     # hidden seed contains the denylist
